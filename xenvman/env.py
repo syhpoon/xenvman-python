@@ -22,7 +22,7 @@
 
 import requests
 
-from .types import OutputEnv, PatchEnv
+from .types import OutputEnv, PatchEnv, ContainerData
 from .errors import ClientError
 
 
@@ -34,6 +34,32 @@ class Env(object):
     def __init__(self, out_env: OutputEnv, server_address: str):
         self.out_env = out_env
         self.server_address = server_address
+
+    def id(self):
+        """
+        Return environment id
+        """
+
+        return self.out_env.id
+
+    def external_address(self) -> str:
+        """
+        Return external address
+        """
+
+        return self.out_env.external_address
+
+    def get_container(self, tpl_name: str, tpl_idx: int,
+                      cont_name: str) -> ContainerData:
+        """
+        Return container definition
+
+        :param tpl_name: Template name
+        :param tpl_idx: Template index
+        :param cont_name: Container name
+        """
+
+        return self.out_env.get_container(tpl_name, tpl_idx, cont_name)
 
     def terminate(self):
         """

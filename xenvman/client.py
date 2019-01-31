@@ -21,10 +21,7 @@
 # SOFTWARE.
 
 import os
-import json
 import requests
-
-from typing import List, Dict
 
 from .types import *
 from .errors import ClientError
@@ -74,25 +71,56 @@ class Client(object):
 
     def list_envs(self) -> List[OutputEnv]:
         """
+        Return list of active environments
 
-        :return:
+        :raises: ClientError
         """
 
-        pass
+        url = "{}/api/v1/env".format(self.server_address)
+
+        r = requests.get(url)
+
+        if r.status_code != 200:
+            raise ClientError("Unexpected HTTP response {}: {}".format(
+                r.status_code, r.reason
+            ))
+
+        return [OutputEnv.from_json(x) for x in r.json()["data"]]
 
     def list_templates(self) -> Dict[str, TplInfo]:
         """
+        Return available templates
 
-        :return:
+        :raises: ClientError
         """
 
-        pass
+        url = "{}/api/v1/tpl".format(self.server_address)
+
+        r = requests.get(url)
+
+        if r.status_code != 200:
+            raise ClientError("Unexpected HTTP response {}: {}".format(
+                r.status_code, r.reason
+            ))
+
+        return {k: TplInfo.from_json(v) for k, v in r.json()["data"].items()}
 
     def get_env_info(self, id: str) -> OutputEnv:
         """
+        Get info for a given environment id
 
         :param id: Environment id
         :return: Environment information
+        :raises: ClientError
         """
 
-        pass
+        url = "{}/api/v1/env/{}".format(self.server_address, id)
+
+        r = requests.get(url)
+
+        if r.status_code != 200:
+            raise ClientError("Unexpected HTTP response {}: {}".format(
+                r.status_code, r.reason
+            ))
+
+        return OutputEnv.from_json(r.json()["data"])

@@ -22,6 +22,8 @@
 
 from typing import List, Dict
 
+from .errors import ClientError
+
 
 class EnvOptions(object):
     """
@@ -30,7 +32,8 @@ class EnvOptions(object):
 
     @staticmethod
     def from_json(data):
-        return EnvOptions(data["keep_alive"], data["disable_discovery"])
+        return EnvOptions(data.get("keep_alive", "2m"),
+                          data.get("disable_discovery", False))
 
     def to_json(self):
         return {
@@ -79,8 +82,8 @@ class InputEnv(object):
 
         return InputEnv(
             data["name"],
-            data["description"],
-            [Tpl.from_json(x) for x in data["templates"]],
+            data.get("description", ""),
+            [Tpl.from_json(x) for x in data.get("templates", [])],
             opts)
 
     def to_json(self) -> dict:
@@ -142,13 +145,13 @@ class OutputEnv(object):
     def from_json(data):
         return OutputEnv(
             data["id"],
-            data["name"],
-            data["description"],
-            data["ws_dir"],
-            data["mount_dir"],
-            data["net_id"],
-            data["created"],
-            data["keep_alive"],
+            data.get("name", ""),
+            data.get("description", ""),
+            data.get("ws_dir", ""),
+            data.get("mount_dir", ""),
+            data.get("net_id", ""),
+            data.get("created", ""),
+            data.get("keep_alive", ""),
             data["external_address"],
             {k: [TplData.from_json(x) for x in v] for
              k, v in data["templates"].items()},
@@ -177,6 +180,32 @@ class OutputEnv(object):
         self.external_address = external_address
         self.templates = templates
 
+    def get_container(self, tpl_name: str, tpl_idx: int,
+                      cont_name: str) -> ContainerData:
+        """
+        Return container definition
+
+        :param tpl_name: Template name
+        :param tpl_idx: Template index
+        :param cont_name: Container name
+        """
+
+        if tpl_name not in self.templates:
+            raise ClientError("Template not found: {}".format(tpl_name))
+
+        tpls = self.templates[tpl_name]
+
+        if tpl_idx >= len(tpls):
+            raise ClientError("Template {} index {} not found".format(
+                tpl_name, tpl_idx))
+
+        cont = tpls[tpl_idx].containers.get(cont_name, None)
+
+        if cont is None:
+            raise ClientError("Container not found: {}".format(cont_name))
+
+        return cont
+
 
 class TplInfoParam(object):
     """
@@ -186,17 +215,17 @@ class TplInfoParam(object):
     @staticmethod
     def from_json(data):
         return TplInfoParam(
-            data["description"],
-            data["type"],
-            data["mandatory"],
-            data["default"],
+            data.get("description", ""),
+            data.get("type", ""),
+            data.get("mandatory", False),
+            data.get("default", None),
         )
 
     def __init__(self,
                  description: str,
                  type: str,
                  mandatory: bool,
-                 default):
+                 default=None):
         self.description = description
         self.type = type
         self.mandatory = mandatory
@@ -211,9 +240,10 @@ class TplInfo(object):
     @staticmethod
     def from_json(data):
         return TplInfo(
-            data["description"],
-            {k: TplInfoParam.from_json(v) for k, v in data.items()},
-            data["data_dir"] or []
+            data.get("description", ""),
+            {k: TplInfoParam.from_json(v) for k, v in
+             data.get("parameters", {}).items()},
+            data.get("data_dir", None) or []
         )
 
     def __init__(self,
@@ -235,7 +265,6 @@ class PatchEnv(object):
                  restart_containers: List[str] = None,
                  templates: List[Tpl] = None
                  ):
-
         self.stop_containers = stop_containers or []
         self.restart_containers = restart_containers or []
         self.templates = templates or []
