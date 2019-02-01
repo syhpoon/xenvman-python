@@ -1,3 +1,6 @@
 .idea/
+dist/
+xenvman.egg-info/
+build/
 *.iml
 *.pyc
