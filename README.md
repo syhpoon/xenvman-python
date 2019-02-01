@@ -15,7 +15,6 @@ pip install xenvman
 The very first thing to do is to create a client:
 
 ```python
-
 import xenvman
 
 cl = xenvman.Client()
@@ -37,7 +36,7 @@ env = cl.new_env(xenvman.InputEnv(
 ))
 ```
 
-And that's it! Once `new_env()` return, you have an environment which you can
+And that's it! Once `new_env()` returns, you have an environment which you can
 start using in your integration tests.
 
 ```python
@@ -45,5 +44,11 @@ cont = env.get_container("db/mongo", 0, "mongo")
 
 # Get the full mongo url with exposed port
 mongo_url = "{}:{}".format(env.external_address(), cont.ports["27017"])
+```
+
+Don't forget to terminate your env after you're done:
+
+```python
+env.terminate()
 ```
 
